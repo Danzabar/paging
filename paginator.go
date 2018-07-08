@@ -192,10 +192,12 @@ func (p *OffsetPaginator) Page() error {
 		return ErrInvalidLimitOrOffset
 	}
 
-	if err := p.Store.PaginateOffset(p.Limit, p.Offset, &p.Count); err != nil {
+	count, err := p.Store.PaginateOffset(p.Limit, p.Offset)
+	if err != nil {
 		return err
 	}
 
+	p.Count = count
 	p.PreviousURI = p.MakePreviousURI()
 	p.NextURI = p.MakeNextURI()
 
@@ -212,10 +214,12 @@ func (p *OffsetPaginator) Previous() (Paginator, error) {
 
 	paginator.Offset = p.Offset - p.Limit
 
-	if err := paginator.Store.PaginateOffset(paginator.Limit, paginator.Offset, &paginator.Count); err != nil {
+	count, err := paginator.Store.PaginateOffset(paginator.Limit, paginator.Offset)
+	if err != nil {
 		return nil, err
 	}
 
+	paginator.Count = count
 	paginator.PreviousURI = p.MakePreviousURI()
 	paginator.NextURI = p.MakeNextURI()
 
@@ -232,10 +236,12 @@ func (p *OffsetPaginator) Next() (Paginator, error) {
 
 	paginator.Offset = p.Offset + p.Limit
 
-	if err := paginator.Store.PaginateOffset(paginator.Limit, paginator.Offset, &paginator.Count); err != nil {
+	count, err := paginator.Store.PaginateOffset(paginator.Limit, paginator.Offset)
+	if err != nil {
 		return nil, err
 	}
 
+	paginator.Count = count
 	paginator.PreviousURI = p.MakePreviousURI()
 	paginator.NextURI = p.MakeNextURI()
 
