@@ -5,6 +5,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // -----------------------------------------------------------------------------
@@ -81,15 +82,17 @@ func (s *GORMStore) PaginateCursor(limit int64, cursor interface{}, fieldName st
 
 // MGOStore is the store for mongodb
 type MGOStore struct {
-	query *mgo.Query
-	items interface{}
+	collection *mgo.Collection
+	filter     bson.M
+	items      interface{}
 }
 
 // NewMGOStore returns a new mongo store
-func NewMGOStore(q *mgo.Query, items interface{}) (*MGOStore, error) {
+func NewMGOStore(collection *mgo.Collection, items interface{}, filter bson.M) (*MGOStore, error) {
 	return &MGOStore{
-		query: q,
-		items: items,
+		collection,
+		filter,
+		items,
 	}, nil
 }
 
@@ -100,7 +103,7 @@ func (m *MGOStore) GetItems() interface{} {
 
 // PaginateOffset paginates items from the store and update page instance.
 func (m *MGOStore) PaginateOffset(limit, offset int64) (int64, error) {
-	q := m.query
+	q := m.collection.Find(m.filter)
 
 	recordCount, _ := q.Count()
 	c := int64(recordCount)
@@ -113,6 +116,14 @@ func (m *MGOStore) PaginateOffset(limit, offset int64) (int64, error) {
 // PaginateCursor paginates items from the store and update page instance for cursor pagination system.
 // cursor can be an ID or a date (time.Time)
 func (m *MGOStore) PaginateCursor(limit int64, cursor interface{}, fieldName string, reverse bool) error {
+	operator := "$gt"
+	if reverse {
+		operator = "$lt"
+	}
 
-	return nil
+	m.filter[fieldName] = bson.M{operator: cursor}
+	q := m.collection.Find(m.filter)
+	q.Limit(int(limit))
+
+	return q.All(m.items)
 }
